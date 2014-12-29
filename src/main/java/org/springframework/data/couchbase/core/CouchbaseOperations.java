@@ -30,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
@@ -181,7 +182,7 @@ public interface CouchbaseOperations {
   /**
    * Query a View for a list of documents of type T.
    * <p/>
-   * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitely, because it will be set to true all the
+   * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitly, because it will be set to true all the
    * time. It is valid to pass in a empty constructed {@link Query} object.</p>
    * <p/>
    * <p>This method does not work with reduced views, because they by design do not contain references to original
@@ -303,4 +304,14 @@ public interface CouchbaseOperations {
    */
   CouchbaseClient getCouchbaseClient();
 
+  /**
+   * update all the results returned by query with function
+   * @param design the name of the design document.
+   * @param view the name of the viewName.
+   * @param query the Query object to customize the viewName query.
+   * @param entityClass the entity to map to.
+   * @param function
+   * @return the total number of documents with function being applied
+   */
+  <T, R> Long updateByView(String designName, String viewName, Query query, Class<T> entityClass, Function<T, R> function);
 }

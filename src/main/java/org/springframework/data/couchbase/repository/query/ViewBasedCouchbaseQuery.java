@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository.query;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.ViewResponse;
@@ -48,11 +49,15 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
   public Object execute(Object[] runtimeParams) {
     Query query = null;
     Pageable pageable = null;
+    Function function = null;
+    
     for (Object param : runtimeParams) {
       if (param instanceof Query) {
         query = (Query) param;
       } else if (param instanceof Pageable) {
         pageable = (Pageable) param;
+      } else if (param instanceof Function) {
+        function = (Function) param;
       } else {
         throw new IllegalStateException("Unknown query param: " + param);
       }
@@ -72,7 +77,11 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
     	    	return response.iterator().next().getValue();
     	    }
     	} else {
-    		return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType());
+    	    if (function == null) {
+    	        return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType());
+    	    } else {
+    	        return operations.updateByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType(), function);
+    	    }
     	}
     } else {
         return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType(), pageable);        

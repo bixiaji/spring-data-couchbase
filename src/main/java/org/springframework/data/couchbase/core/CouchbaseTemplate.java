@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.protocol.views.Paginator;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
@@ -64,6 +65,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 /**
  * @author Michael Nitschinger
@@ -244,6 +246,34 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     return page;
   }
 
+
+  @Override
+  public <T, R> Long updateByView(final String designName, final String viewName, final Query query, final Class<T> entityClass, final Function<T, R> function) {
+
+    if (query.willIncludeDocs()) {
+      query.setIncludeDocs(false);
+    }
+    if (query.willReduce()) {
+      // do not reduce here
+      query.setReduce(true);
+    }
+    final View view = client.getView(designName, viewName);
+    int docsPerPage = 20;
+    Paginator paginator = client.paginatedQuery(view, query, docsPerPage);
+    long total = 0;
+    while (paginator.hasNext()) {
+        final ViewResponse response = paginator.next();        
+        for (final ViewRow row : response) {
+            T entity = findById(row.getId(), entityClass);
+            function.apply(entity);
+            save(entity);
+            total++;
+        }
+     }
+    
+    return total;
+  }
+  
   @Override
   public ViewResponse queryView(final String designName, final String viewName, final Query query) {
     return execute(new BucketCallback<ViewResponse>() {
