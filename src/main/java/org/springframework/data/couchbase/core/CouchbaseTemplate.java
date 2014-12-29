@@ -21,11 +21,13 @@ import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
+
 import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.PersistTo;
 import net.spy.memcached.ReplicateTo;
 import net.spy.memcached.internal.OperationFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -47,6 +49,9 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeDeleteEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.BeanWrapper;
 
@@ -213,6 +218,30 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     }
 
     return result;
+  }
+
+  @Override
+  public <T> Page<T> findByView(final String designName, final String viewName, final Query query, final Class<T> entityClass, final Pageable pageable) {
+
+    if (query.willIncludeDocs()) {
+      query.setIncludeDocs(false);
+    }
+    if (query.willReduce()) {
+      query.setReduce(false);
+    }
+
+    query.setLimit(pageable.getPageSize());
+    query.setSkip(pageable.getPageSize() * pageable.getPageNumber());
+
+    final ViewResponse response = queryView(designName, viewName, query);
+
+    final List<T> result = new ArrayList<T>(response.size());
+    for (final ViewRow row : response) {
+      result.add(findById(row.getId(), entityClass));
+    }
+
+    Page<T> page = new PageImpl<T>(result, pageable, response.getTotalRows());
+    return page;
   }
 
   @Override

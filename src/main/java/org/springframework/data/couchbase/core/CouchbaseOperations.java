@@ -20,9 +20,13 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.ViewResponse;
+
 import net.spy.memcached.PersistTo;
 import net.spy.memcached.ReplicateTo;
+
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Collection;
 import java.util.List;
@@ -192,6 +196,24 @@ public interface CouchbaseOperations {
    */
   <T> List<T> findByView(String design, String view, Query query, Class<T> entityClass);
 
+  /**
+   * Query a View for a page of documents of type T.
+   * <p/>
+   * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitly, because it will be set to true all the
+   * time. It is valid to pass in a empty constructed {@link Query} object.</p>
+   * <p/>
+   * <p>This method does not work with reduced views, because they by design do not contain references to original
+   * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
+   *
+   * @param design the name of the design document.
+   * @param view the name of the viewName.
+   * @param query the Query object to customize the viewName query.
+   * @param entityClass the entity to map to.
+   * @param pageable page information
+   *
+   * @return the converted page of T
+   */
+  <T> Page<T> findByView(String design, String view, Query query, Class<T> entityClass, Pageable pageable);
 
   /**
    * Query a View with direct access to the {@link ViewResponse}.

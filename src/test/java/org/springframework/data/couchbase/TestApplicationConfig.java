@@ -46,7 +46,7 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
 
   @Bean
   public String couchbaseAdminPassword() {
-    return env.getProperty("couchbase.adminUser", "password");
+    return env.getProperty("couchbase.adminPassword", "password");
   }
 
   @Override

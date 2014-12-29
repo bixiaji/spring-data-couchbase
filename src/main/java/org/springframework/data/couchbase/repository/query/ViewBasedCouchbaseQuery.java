@@ -16,8 +16,15 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.ViewResponse;
+import com.couchbase.client.protocol.views.ViewRow;
+
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.StringUtils;
@@ -40,9 +47,12 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
   @Override
   public Object execute(Object[] runtimeParams) {
     Query query = null;
+    Pageable pageable = null;
     for (Object param : runtimeParams) {
       if (param instanceof Query) {
         query = (Query) param;
+      } else if (param instanceof Pageable) {
+        pageable = (Pageable) param;
       } else {
         throw new IllegalStateException("Unknown query param: " + param);
       }
@@ -51,9 +61,22 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
     if (query == null) {
       query = new Query();
     }
-    query.setReduce(false);
 
-    return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType());
+    if (pageable == null) {
+    	if (query.willReduce()) {
+    		// with reduce, only returning count
+    	    final ViewResponse response = operations.queryView(designDocName(), viewName(), query);
+    	    if (response.size() == 0) {
+    	    	return 0;
+    	    } else {
+    	    	return response.iterator().next().getValue();
+    	    }
+    	} else {
+    		return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType());
+    	}
+    } else {
+        return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType(), pageable);        
+    }
   }
 
   @Override
