@@ -25,6 +25,7 @@ import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
@@ -49,15 +50,12 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
   public Object execute(Object[] runtimeParams) {
     Query query = null;
     Pageable pageable = null;
-    Function function = null;
     
     for (Object param : runtimeParams) {
       if (param instanceof Query) {
         query = (Query) param;
       } else if (param instanceof Pageable) {
         pageable = (Pageable) param;
-      } else if (param instanceof Function) {
-        function = (Function) param;
       } else {
         throw new IllegalStateException("Unknown query param: " + param);
       }
@@ -68,21 +66,7 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
     }
 
     if (pageable == null) {
-    	if (query.willReduce()) {
-    		// with reduce, only returning count
-    	    final ViewResponse response = operations.queryView(designDocName(), viewName(), query);
-    	    if (response.size() == 0) {
-    	    	return 0;
-    	    } else {
-    	    	return response.iterator().next().getValue();
-    	    }
-    	} else {
-    	    if (function == null) {
-    	        return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType());
-    	    } else {
-    	        return operations.updateByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType(), function);
-    	    }
-    	}
+        return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType());
     } else {
         return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType(), pageable);        
     }
