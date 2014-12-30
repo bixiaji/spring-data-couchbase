@@ -142,10 +142,35 @@ public interface CouchbaseOperations {
    * {@link CouchbaseOperations#save} method for this.</p>
    *
    * @param objectToUpdate the object to add to the bucket.
-   * @param persistTo the persistence constraint setting.
-   * @param replicateTo the replication constraint setting.
+ * @param expiry expiration time for the object
+   */
+  void update(Object objectToUpdate, int expiry);
+
+  /**
+   * Update the given object.
+   * <p/>
+   * <p>When the document does not exist (specified by its unique id) it will not be created. Use the
+   * {@link CouchbaseOperations#save} method for this.</p>
+   *
+   * @param objectToUpdate the object to add to the bucket.
+ * @param expiry expiration time for the object
+ * @param persistTo the persistence constraint setting.
+ * @param replicateTo the replication constraint setting.
    */
   void update(Object objectToUpdate, PersistTo persistTo, ReplicateTo replicateTo);
+
+  /**
+   * Update the given object.
+   * <p/>
+   * <p>When the document does not exist (specified by its unique id) it will not be created. Use the
+   * {@link CouchbaseOperations#save} method for this.</p>
+   *
+   * @param objectToUpdate the object to add to the bucket.
+ * @param expiry expiration time for the object
+ * @param persistTo the persistence constraint setting.
+ * @param replicateTo the replication constraint setting.
+   */
+  void update(Object objectToUpdate, int expiry, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Insert a list of objects.
@@ -164,10 +189,22 @@ public interface CouchbaseOperations {
    * {@link CouchbaseOperations#save} method for this.</p>
    *
    * @param batchToUpdate the list of objects to add to the bucket.
-   * @param persistTo the persistence constraint setting.
-   * @param replicateTo the replication constraint setting.
+   * @param expiry expiration time for the object
    */
-  void update(Collection<?> batchToUpdate, PersistTo persistTo, ReplicateTo replicateTo);
+  void update(Collection<?> batchToUpdate, int expiry);
+
+  /**
+   * Insert a list of objects.
+   * <p/>
+   * <p>If one of the documents does not exist (specified by its unique id), then it will not be created. Use the
+   * {@link CouchbaseOperations#save} method for this.</p>
+   *
+   * @param batchToUpdate the list of objects to add to the bucket.
+ * @param expiry expiration time for the objects
+ * @param persistTo the persistence constraint setting.
+ * @param replicateTo the replication constraint setting.
+   */
+  void update(Collection<?> batchToUpdate, int expiry, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Find an object by its given Id and map it to the corresponding entity.
@@ -311,7 +348,8 @@ public interface CouchbaseOperations {
    * @param query the Query object to customize the viewName query.
    * @param entityClass the entity to map to.
    * @param function
+   * @param expiry expiry
    * @return the total number of documents with function being applied
    */
-  <T, R> Long updateByView(String designName, String viewName, Query query, Class<T> entityClass, Function<T, R> function);
+  <T, R> Long updateByView(String designName, String viewName, Query query, Class<T> entityClass, Function<T, R> function, int expiry);
 }
